@@ -6,7 +6,6 @@ from aiogram.filters import Command
 from aiogram.types import FSInputFile
 import yt_dlp
 
-# Токен аз қисми Environment Variables-и Render гирифта мешавад
 TOKEN = os.getenv("TOKEN")
 
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +38,8 @@ async def download_audio(message: types.Message):
         }],
         'outtmpl': output_template,
         'quiet': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'geo_bypass': True,
     }
 
     try:
