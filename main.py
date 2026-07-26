@@ -14,7 +14,6 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# Барои дар хотир доштани линки фиристодаи корбар
 user_links = {}
 
 async def handle(request):
@@ -44,28 +43,18 @@ async def get_link(message: types.Message):
         await message.reply("Лутфан линки дурусти видеоро фиристед!")
         return
 
-    # Линкро захира мекунем барои ҳамин корбар
     user_links[message.from_user.id] = url
 
-    # Кнопкаҳои интихоби сифат монанди расми фиристодаатон
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="⚡ 144p", callback_data="dl_144"),
-            InlineKeyboardButton(text="⚡ 360p", callback_data="dl_360")
-        ],
-        [
-            InlineKeyboardButton(text="⚡ 480p", callback_data="dl_480"),
-            InlineKeyboardButton(text="⚡ 720p", callback_data="dl_720")
-        ],
-        [
-            InlineKeyboardButton(text="⚡ 1080p", callback_data="dl_1080"),
-            InlineKeyboardButton(text="🎵 MP3", callback_data="dl_mp3")
+            InlineKeyboardButton(text="⚡ Видео (Стандарт)", callback_data="dl_video"),
+            InlineKeyboardButton(text="🎵 MP3 (Мусиқӣ)", callback_data="dl_mp3")
         ]
     ])
 
     await message.reply(
-        "📥 **Формат ва сифати дилхоҳро интихоб кунед:**\n\n"
-        "👇 Тугмаҳои зеринро пахш кунед:",
+        "📥 **Формати дилхоҳро интихоб кунед:**\n\n"
+        "👇 Тугмаи зеринро пахш кунед:",
         reply_markup=keyboard
     )
 
@@ -96,16 +85,12 @@ async def process_download(callback: types.CallbackQuery):
             }],
             'outtmpl': '%(id)s.%(ext)s'
         })
-    elif action == "dl_144":
-        ydl_opts.update({'format': 'bestvideo[height<=144]+bestaudio/best[height<=144]', 'outtmpl': '%(id)s.%(ext)s'})
-    elif action == "dl_360":
-        ydl_opts.update({'format': 'bestvideo[height<=360]+bestaudio/best[height<=360]', 'outtmpl': '%(id)s.%(ext)s'})
-    elif action == "dl_480":
-        ydl_opts.update({'format': 'bestvideo[height<=480]+bestaudio/best[height<=480]', 'outtmpl': '%(id)s.%(ext)s'})
-    elif action == "dl_720":
-        ydl_opts.update({'format': 'bestvideo[height<=720]+bestaudio/best[height<=720]', 'outtmpl': '%(id)s.%(ext)s'})
-    elif action == "dl_1080":
-        ydl_opts.update({'format': 'bestvideo[height<=1080]+bestaudio/best[height<=1080]', 'outtmpl': '%(id)s.%(ext)s'})
+    else:
+        # Формати бехатар барои видео ки бе FFmpeg ҳам кор мекунад
+        ydl_opts.update({
+            'format': 'best[ext=mp4]/best',
+            'outtmpl': '%(id)s.%(ext)s'
+        })
 
     try:
         def download_file():
@@ -130,7 +115,7 @@ async def process_download(callback: types.CallbackQuery):
         os.remove(file_path)
     except Exception as e:
         logging.error(f"Хатогӣ: {e}")
-        await callback.message.edit_text("❌ Мутассифона, зеркашии ин сифат муяссар нашуд ё видео ин қадар сифат надорад.")
+        await callback.message.edit_text("❌ Мутассифона, зеркашии ин линк муяссар нашуд.")
 
     await callback.answer()
 
