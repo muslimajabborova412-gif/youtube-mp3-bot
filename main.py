@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# Веб-сервери хурд барои қонеъ кардани талаботи порти Render
+# Веб-сервери хурд барои порти Render
 async def handle(request):
     return web.Response(text="Bot is running!")
 
@@ -91,6 +91,7 @@ async def download_audio(message: types.Message):
         'quiet': True,
         'no_warnings': True,
         'nocheckcertificate': True,
+        'cookiefile': 'cookies.txt',  # Номи файли куки дар GitHub бояд айнан cookies.txt бошад
         'progress_hooks': [progress_hook],
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
     }
@@ -126,7 +127,6 @@ async def download_audio(message: types.Message):
             pass
 
 async def main():
-    # Веб-серверро дар баробари бот ба кор медарорем, то Render ягон хатогӣ надиҳад
     await web_server()
     await dp.start_polling(bot)
 
