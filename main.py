@@ -47,8 +47,8 @@ async def get_link(message: types.Message):
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="⚡ Видео (Стандарт)", callback_data="dl_video"),
-            InlineKeyboardButton(text="🎵 MP3 (Мусиқӣ)", callback_data="dl_mp3")
+            InlineKeyboardButton(text="🎬 Видео (MP4)", callback_data="dl_video"),
+            InlineKeyboardButton(text="🎵 Мусиқӣ (MP3)", callback_data="dl_mp3")
         ]
     ])
 
@@ -67,11 +67,28 @@ async def process_download(callback: types.CallbackQuery):
 
     url = user_links[user_id]
     action = callback.data
-    await callback.message.edit_text("⏳ Боргирӣ оғоз шуд, лутфан интизор шавед...")
+    
+    processing_msg = await callback.message.edit_text("⏳ Боргирӣ оғоз шуд: 0%")
+
+    loop = asyncio.get_event_loop()
+
+    def progress_hook(d):
+        if d['status'] == 'downloading':
+            percent = d.get('_percent_str', '0%').strip()
+            try:
+                coro = bot.edit_message_text(
+                    chat_id=callback.message.chat.id,
+                    message_id=processing_msg.message_id,
+                    text=f"⏳ Видео боргирӣ шуда истодааст: {percent}"
+                )
+                asyncio.run_coroutine_threadsafe(coro, loop)
+            except Exception:
+                pass
 
     ydl_opts = {
         'nocheckcertificate': True,
         'cookiefile': 'cookies.txt',
+        'progress_hooks': [progress_hook],
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
     }
 
@@ -86,7 +103,6 @@ async def process_download(callback: types.CallbackQuery):
             'outtmpl': '%(id)s.%(ext)s'
         })
     else:
-        # Формати бехатар барои видео ки бе FFmpeg ҳам кор мекунад
         ydl_opts.update({
             'format': 'best[ext=mp4]/best',
             'outtmpl': '%(id)s.%(ext)s'
@@ -104,7 +120,11 @@ async def process_download(callback: types.CallbackQuery):
 
         file_path = await asyncio.to_thread(download_file)
 
-        await callback.message.edit_text("📤 Файл фиристода истодааст...")
+        await bot.edit_message_text(
+            chat_id=callback.message.chat.id,
+            message_id=processing_msg.message_id,
+            text="📤 Файл фиристода истодааст..."
+        )
 
         file = FSInputFile(file_path)
         if action == "dl_mp3":
@@ -113,9 +133,14 @@ async def process_download(callback: types.CallbackQuery):
             await bot.send_video(chat_id=callback.message.chat.id, video=file, caption="🎬 Видеои шумо!\nСозанда: Шералиев Абдураҳим")
 
         os.remove(file_path)
+        await bot.delete_message(chat_id=callback.message.chat.id, message_id=processing_msg.message_id)
     except Exception as e:
         logging.error(f"Хатогӣ: {e}")
-        await callback.message.edit_text("❌ Мутассифона, зеркашии ин линк муяссар нашуд.")
+        await bot.edit_message_text(
+            chat_id=callback.message.chat.id,
+            message_id=processing_msg.message_id,
+            text="❌ Мутассифона, зеркашии ин линк муяссар нашуд."
+        )
 
     await callback.answer()
 
