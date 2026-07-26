@@ -68,44 +68,30 @@ async def process_download(callback: types.CallbackQuery):
     url = user_links[user_id]
     action = callback.data
     
-    processing_msg = await callback.message.edit_text("⏳ Боргирӣ оғоз шуд: 0%")
+    processing_msg = await callback.message.edit_text("⏳ Боргирӣ оғоз шуд...")
 
-    loop = asyncio.get_event_loop()
-
-    def progress_hook(d):
-        if d['status'] == 'downloading':
-            percent = d.get('_percent_str', '0%').strip()
-            try:
-                coro = bot.edit_message_text(
-                    chat_id=callback.message.chat.id,
-                    message_id=processing_msg.message_id,
-                    text=f"⏳ Видео боргирӣ шуда истодааст: {percent}"
-                )
-                asyncio.run_coroutine_threadsafe(coro, loop)
-            except Exception:
-                pass
-
+    # Настройкии пурқувват барои гузаштани муҳофизати YouTube
     ydl_opts = {
         'nocheckcertificate': True,
         'cookiefile': 'cookies.txt',
-        'progress_hooks': [progress_hook],
+        'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
     }
 
     if action == "dl_mp3":
         ydl_opts.update({
-            'format': 'bestaudio/best',
+            'format': 'bestaudio',
+            'outtmpl': '%(id)s.%(ext)s',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }],
-            'outtmpl': '%(id)s.%(ext)s'
         })
     else:
         ydl_opts.update({
-            'format': 'best[ext=mp4]/best',
-            'outtmpl': '%(id)s.%(ext)s'
+            'format': 'best[ext=mp4]/best/bestvideo+bestaudio',
+            'outtmpl': '%(id)s.%(ext)s',
         })
 
     try:
