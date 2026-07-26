@@ -14,7 +14,6 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# Веб-сервери хурд барои порти Render
 async def handle(request):
     return web.Response(text="Bot is running!")
 
@@ -29,9 +28,11 @@ async def web_server():
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
     await message.reply(
-        "Салом! Ин боти табдили видео ба MP3 аст.\n"
-        "Лутфан линки видеоро аз YouTube, TikTok ё Instagram фиристед:\n\n"
-        "Бо фармони /info метавонед маълумоти бештар гиред."
+        "👋 Салом!\n"
+        "Ин боти зеркашии видео ва мусиқӣ аз YouTube, TikTok ва Instagram аст.\n\n"
+        "👨‍💻 **Созанда ва таҳиягар:** Шералиев Абдураҳим\n\n"
+        "Лутфан линки видеоро фиристед:\n"
+        "Бо фармони /info маълумоти бештар гиред."
     )
 
 @dp.message(Command("info"))
@@ -42,8 +43,8 @@ async def send_info(message: types.Message):
     ])
     await message.reply(
         "ℹ️ **Маълумот дар бораи бот:**\n\n"
-        "Ин бот видеоҳоро аз YouTube, TikTok ва Instagram ба мусиқии MP3 табдил медиҳад.\n"
-        "Танҳо линки видеоро равон кунед ва мусиқии худро қабул кунед!",
+        "Ин бот аз тарафи **Шералиев Абдураҳим** сохта шудааст.\n"
+        "Видеоҳоро аз YouTube, TikTok ва Instagram ба мусиқии MP3 табдил медиҳад!",
         reply_markup=keyboard
     )
 
@@ -52,7 +53,7 @@ async def callback_handler(callback: types.CallbackQuery):
     if callback.data == "how_to_use":
         await callback.message.answer("1. Линки видеоро аз Ютуб, Инстаграм ё ТикТок нусхабардорӣ кунед.\n2. Онро ба ҳамин чат фиристед.\n3. Чанд сония интизор шавед ва файли MP3-ро зеркашӣ кунед!")
     elif callback.data == "platforms":
-        await callback.message.answer("Мо ин платформаҳоро дастгирӣ мекунем:\n- YouTube\n- TikTok\n- Instagram")
+        await callback.message.answer("Мо ин платформаҳоро дастгирӣ мекунем:\n- YouTube (бо кукиҳо)\n- TikTok\n- Instagram")
     await callback.answer()
 
 @dp.message()
@@ -91,7 +92,7 @@ async def download_audio(message: types.Message):
         'quiet': True,
         'no_warnings': True,
         'nocheckcertificate': True,
-        'cookiefile': 'cookies.txt',  # Номи файли куки дар GitHub бояд айнан cookies.txt бошад
+        'cookiefile': 'cookies.txt',
         'progress_hooks': [progress_hook],
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
     }
@@ -113,7 +114,7 @@ async def download_audio(message: types.Message):
         )
 
         audio = FSInputFile(mp3_file)
-        await message.reply_audio(audio=audio, caption="Марҳамат, мусиқии шумо!")
+        await message.reply_audio(audio=audio, caption="Марҳамат, мусиқии шумо! 🎧\nСозанда: @SaveMediaTjBot")
         
         os.remove(mp3_file)
         await bot.delete_message(chat_id=message.chat.id, message_id=processing_msg.message_id)
