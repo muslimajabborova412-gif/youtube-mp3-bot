@@ -1,16 +1,30 @@
 import asyncio
 import logging
 import os
+from aiohttp import web
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 import yt_dlp
 
 TOKEN = os.getenv("TOKEN")
+PORT = int(os.getenv("PORT", 10000))
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
+
+# Веб-сервери хурд барои қонеъ кардани талаботи порти Render
+async def handle(request):
+    return web.Response(text="Bot is running!")
+
+async def web_server():
+    app = web.Application()
+    app.router.add_get("/", handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", PORT)
+    await site.start()
 
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
@@ -38,7 +52,7 @@ async def callback_handler(callback: types.CallbackQuery):
     if callback.data == "how_to_use":
         await callback.message.answer("1. Линки видеоро аз Ютуб, Инстаграм ё ТикТок нусхабардорӣ кунед.\n2. Онро ба ҳамин чат фиристед.\n3. Чанд сония интизор шавед ва файли MP3-ро зеркашӣ кунед!")
     elif callback.data == "platforms":
-        await callback.message.answer("Мо ин платформаҳоро дастгирӣ мекунем:\n- YouTube (ТикТок ва Инстаграм бе мушкил кор мекунанд)")
+        await callback.message.answer("Мо ин платформаҳоро дастгирӣ мекунем:\n- YouTube\n- TikTok\n- Instagram")
     await callback.answer()
 
 @dp.message()
@@ -50,13 +64,10 @@ async def download_audio(message: types.Message):
 
     processing_msg = await message.reply("⏳ Боргирӣ оғоз шуд: 0%")
 
-    # Функция барои паҳн кардани фоиз ба бот
     def progress_hook(d):
         if d['status'] == 'downloading':
             percent = d.get('_percent_str', '0%').strip()
-            # Барои он ки ҳар бор паёми нав нашавад, мо метавонем дар байни кор фоизро тағйир диҳем
             try:
-                # Дар асинхронӣ тавассути loop паёмро навсозӣ мекунем
                 coro = bot.edit_message_text(
                     chat_id=message.chat.id,
                     message_id=processing_msg.message_id,
@@ -115,6 +126,8 @@ async def download_audio(message: types.Message):
             pass
 
 async def main():
+    # Веб-серверро дар баробари бот ба кор медарорем, то Render ягон хатогӣ надиҳад
+    await web_server()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
