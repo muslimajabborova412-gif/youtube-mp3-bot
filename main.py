@@ -38,7 +38,7 @@ async def callback_handler(callback: types.CallbackQuery):
     if callback.data == "how_to_use":
         await callback.message.answer("1. Линки видеоро аз Ютуб, Инстаграм ё ТикТок нусхабардорӣ кунед.\n2. Онро ба ҳамин чат фиристед.\n3. Чанд сония интизор шавед ва файли MP3-ро зеркашӣ кунед!")
     elif callback.data == "platforms":
-        await callback.message.answer("Мо ин платформаҳоро дастгирӣ мекунем:\n- YouTube\n- TikTok\n- Instagram")
+        await callback.message.answer("Мо ин платформаҳоро дастгирӣ мекунем:\n- YouTube (ТикТок ва Инстаграм бе мушкил кор мекунанд)")
     await callback.answer()
 
 @dp.message()
@@ -48,7 +48,25 @@ async def download_audio(message: types.Message):
         await message.reply("Лутфан линки дуруст фиристед!")
         return
 
-    processing_msg = await message.reply("⏳ Видео боргирӣ ва ба мусиқӣ табдил дода шуда истодааст, лутфан каме интизор шавед...")
+    processing_msg = await message.reply("⏳ Боргирӣ оғоз шуд: 0%")
+
+    # Функция барои паҳн кардани фоиз ба бот
+    def progress_hook(d):
+        if d['status'] == 'downloading':
+            percent = d.get('_percent_str', '0%').strip()
+            # Барои он ки ҳар бор паёми нав нашавад, мо метавонем дар байни кор фоизро тағйир диҳем
+            try:
+                # Дар асинхронӣ тавассути loop паёмро навсозӣ мекунем
+                coro = bot.edit_message_text(
+                    chat_id=message.chat.id,
+                    message_id=processing_msg.message_id,
+                    text=f"⏳ Видео боргирӣ шуда истодааст: {percent}"
+                )
+                asyncio.run_coroutine_threadsafe(coro, loop)
+            except Exception:
+                pass
+
+    loop = asyncio.get_event_loop()
 
     output_template = f"%(id)s.%(ext)s"
     ydl_opts = {
@@ -61,15 +79,9 @@ async def download_audio(message: types.Message):
         'outtmpl': output_template,
         'quiet': True,
         'no_warnings': True,
-        'extract_flat': False,
         'nocheckcertificate': True,
+        'progress_hooks': [progress_hook],
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-us,en;q=0.5',
-            'Sec-Fetch-Mode': 'navigate',
-        },
     }
 
     try:
@@ -81,6 +93,12 @@ async def download_audio(message: types.Message):
                 return base + ".mp3"
 
         mp3_file = await asyncio.to_thread(extract)
+
+        await bot.edit_message_text(
+            chat_id=message.chat.id,
+            message_id=processing_msg.message_id,
+            text="🎵 Ба мусиқӣ табдил дода шуд, фиристода истодааст..."
+        )
 
         audio = FSInputFile(mp3_file)
         await message.reply_audio(audio=audio, caption="Марҳамат, мусиқии шумо!")
